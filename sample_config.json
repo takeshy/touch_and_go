@@ -1,0 +1,9 @@
+{
+  "watchers": [
+    {
+      "directory": "/home/ubuntu/sample",
+      "excludes": ["node_modules"]
+    }
+  ]
+}
+
