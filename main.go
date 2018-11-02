@@ -73,13 +73,16 @@ func handleJobs(jobsC <-chan Job) {
 			fmt.Errorf("An error occurred touch: %s \n\n", err.Error())
 			os.Exit(-1)
 		}
+		cmd.Wait()
 		if job.Kind == "deleted" {
 			rmCmd := exec.Command("rm", job.Path)
 			rmCmd.Stdout = os.Stdout
 			rmCmd.Stderr = os.Stderr
 			if err := rmCmd.Start(); err != nil {
 				fmt.Errorf("An error occurred rm: %s \n\n", err.Error())
+				os.Exit(-1)
 			}
+			rmCmd.Wait()
 		}
 	}
 }
