@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"regexp"
 	"strings"
 	"time"
@@ -63,26 +62,46 @@ func main() {
 	handleJobs(jobsC)
 }
 
+func getMtime(path string) (mtime time.Time, err error) {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return
+	}
+	mtime = fi.ModTime()
+	return
+}
+func setMtime(path string, mtime time.Time) (err error) {
+	atime := time.Now()
+	err = os.Chtimes(path, atime, mtime)
+	return
+}
+
 func handleJobs(jobsC <-chan Job) {
 	for job := range jobsC {
-		cmd := exec.Command("touch", job.Path)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		// fmt.Printf("%s %s\n", job.Kind, job.Path)
-		if err := cmd.Start(); err != nil {
-			fmt.Errorf("An error occurred touch: %s \n\n", err.Error())
-			os.Exit(-1)
-		}
-		cmd.Wait()
 		if job.Kind == "deleted" {
-			rmCmd := exec.Command("rm", job.Path)
-			rmCmd.Stdout = os.Stdout
-			rmCmd.Stderr = os.Stderr
-			if err := rmCmd.Start(); err != nil {
-				fmt.Errorf("An error occurred rm: %s \n\n", err.Error())
+			fi, err := os.Create(job.Path)
+			if err != nil {
+				fmt.Errorf("An error occurred Create %s: %s \n\n", job.Path, err.Error())
 				os.Exit(-1)
 			}
-			rmCmd.Wait()
+			time.Sleep(500 * time.Millisecond)
+			err = fi.Close()
+			if err != nil {
+				fmt.Errorf("An error occurred Close %s: %s \n\n", job.Path, err.Error())
+				os.Exit(-1)
+			}
+			err = os.Remove(job.Path)
+			if err != nil {
+				fmt.Errorf("An error occurred Remove %s: %s \n\n", job.Path, err.Error())
+				os.Exit(-1)
+			}
+		} else {
+			mTime, err := getMtime(job.Path)
+			if err != nil {
+				fmt.Errorf("An error occurred touch: %s \n\n", err.Error())
+				os.Exit(-1)
+			}
+			setMtime(job.Path, mTime.Add(2))
 		}
 	}
 }
@@ -133,7 +152,7 @@ func (w *Watcher) readDir(dirname string, init bool) error {
 				if !prs {
 					w.Targets[dirname][name] = FileStatus{ModTime: modTime, LastModTime: modTime}
 					w.sendJob(dirname, name, "created")
-				} else if preservedFileInfo.LastModTime != 0 && preservedFileInfo.LastModTime != modTime {
+				} else if preservedFileInfo.LastModTime != 0 {
 					w.Targets[dirname][name] = FileStatus{ModTime: modTime, LastModTime: 0}
 				} else if preservedFileInfo.LastModTime == 0 && preservedFileInfo.ModTime != modTime {
 					w.Targets[dirname][name] = FileStatus{ModTime: modTime, LastModTime: modTime}

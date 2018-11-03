@@ -9,7 +9,7 @@ I use https://github.com/yosssi/goat as reference. thanks yosssi.
 
 You can use touch_and_go to Docker for Windows on shared directory.
 because currently, inotify does not work on Docker for Windows. 
-execute touch_and_go on docker container and if file changed, touch_and_go execute touch command that file for iNotify. 
+execute touch_and_go on docker container and if file changed, touch_and_go touch that file for iNotify.
 So App as Rails, webpack-dev-server etc. can detect file changes.
 
 ## Installation
