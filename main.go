@@ -78,24 +78,7 @@ func setMtime(path string, mtime time.Time) (err error) {
 
 func handleJobs(jobsC <-chan Job) {
 	for job := range jobsC {
-		if job.Kind == "deleted" {
-			fi, err := os.Create(job.Path)
-			if err != nil {
-				fmt.Errorf("An error occurred Create %s: %s \n\n", job.Path, err.Error())
-				os.Exit(-1)
-			}
-			time.Sleep(500 * time.Millisecond)
-			err = fi.Close()
-			if err != nil {
-				fmt.Errorf("An error occurred Close %s: %s \n\n", job.Path, err.Error())
-				os.Exit(-1)
-			}
-			err = os.Remove(job.Path)
-			if err != nil {
-				fmt.Errorf("An error occurred Remove %s: %s \n\n", job.Path, err.Error())
-				os.Exit(-1)
-			}
-		} else {
+		if job.Kind != "deleted" {
 			mTime, err := getMtime(job.Path)
 			if err != nil {
 				fmt.Errorf("An error occurred touch: %s \n\n", err.Error())
